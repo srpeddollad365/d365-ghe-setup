@@ -1,50 +1,56 @@
 name: D365 Solution CI/CD
+
 on:
   push:
     branches:
       - main
-      - feature/d365-cicd-setup
-  workflow_dispatch: 
+      - feature/**
+  workflow_dispatch:
+
 env:
   SOLUTION_NAME: test
- 
+  ENVIRONMENT_URL: https://YOUR_ORG.crm.dynamics.com
+
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: windows-latest
- 
+
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v4
- 
-      - name: Install Power Platform CLI
-        uses: microsoft/power-platform-actions/install@v1
- 
-      - name: Authenticate to Power Platform
-        uses: microsoft/power-platform-actions/authenticate@v1
-        with:
-          tenant-id: ${{ secrets.TENANTID }}
-          client-id: ${{ secrets.CLIENTID }}
-          client-secret: ${{ secrets.CLIENTSECRETVALUE }}
-          environment-url: ${{ secrets.PP_DEV_URL }}
- 
-      - name: Export solution
-        uses: microsoft/power-platform-actions/export-solution@v1
-        with:
-          solution-name: ${{ env.SOLUTION_NAME }}
-          solution-output-file: solutions/${{ env.SOLUTION_NAME }}.zip
-          managed: false
- 
-      - name: Unpack solution
-        uses: microsoft/power-platform-actions/unpack-solution@v1
-        with:
-          solution-file: solutions/${{ env.SOLUTION_NAME }}.zip
-          target-folder: solutions/${{ env.SOLUTION_NAME }}
-          solution-type: Unmanaged
- 
-      - name: Commit solution to repo
+
+      - name: Install Power Platform CLI (pac)
+        shell: pwsh
         run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add solutions
-          git commit -m "Export solution ${{ env.SOLUTION_NAME }}" || echo "No changes"
-          git push
+          Write-Host "Downloading Power Platform CLI..."
+          Invoke-WebRequest `
+            -Uri "https://github.com/microsoft/powerplatform-cli/releases/latest/download/pac.powerplatform.cli.zip" `
+            -OutFile "pac.zip"
+
+          Expand-Archive -Path "pac.zip" -DestinationPath "$env:GITHUB_WORKSPACE\pac" -Force
+
+          $env:Path += ";$env:GITHUB_WORKSPACE\pac"
+
+          Write-Host "PAC Version:"
+          pac version
+
+      - name: Authenticate to D365 (Service Principal)
+        shell: pwsh
+        run: |
+          pac auth create `
+            --name GitHubConnection `
+            --url "${{ env.ENVIRONMENT_URL }}" `
+            --applicationid "${{ secrets.CLIENTID }}" `
+            --clientsecret "${{ secrets.CLIENTSECRETVALUE }}" `
+            --tenant "${{ secrets.TENANTID }}" `
+            --prompt never
+
+          pac auth select --name GitHubConnection
+
+      - name: Import Solution to Environment
+        shell: pwsh
+        run: |
+          pac solution import `
+            --path "solutions/${{ env.SOLUTION_NAME }}.managed.zip" `
+            --overwrite-unmanaged-customizations `
+            --publish
