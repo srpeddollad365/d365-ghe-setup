@@ -1,23 +1,18 @@
 name: D365 Solution CI/CD
-
 on:
   push:
     branches:
       - main
       - feature/**
   workflow_dispatch:
-
 env:
   SOLUTION_NAME: test
-
 jobs:
   deploy:
     runs-on: windows-latest
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-
       - name: Install Power Platform CLI (pac)
         shell: pwsh
         run: |
