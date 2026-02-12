@@ -9,7 +9,6 @@ on:
 
 env:
   SOLUTION_NAME: test
-  ENVIRONMENT_URL: https://YOUR_ORG.crm.dynamics.com
 
 jobs:
   deploy:
@@ -22,14 +21,10 @@ jobs:
       - name: Install Power Platform CLI (pac)
         shell: pwsh
         run: |
-          Write-Host "Downloading Power Platform CLI..."
-          Invoke-WebRequest `
-            -Uri "https://github.com/microsoft/powerplatform-cli/releases/latest/download/pac.powerplatform.cli.zip" `
-            -OutFile "pac.zip"
+          Write-Host "Installing Power Platform CLI via .NET tool..."
+          dotnet tool install --global Microsoft.PowerApps.CLI.Tool
 
-          Expand-Archive -Path "pac.zip" -DestinationPath "$env:GITHUB_WORKSPACE\pac" -Force
-
-          $env:Path += ";$env:GITHUB_WORKSPACE\pac"
+          $env:Path += ";$env:USERPROFILE\.dotnet\tools"
 
           Write-Host "PAC Version:"
           pac version
@@ -39,7 +34,7 @@ jobs:
         run: |
           pac auth create `
             --name GitHubConnection `
-            --url "${{ env.ENVIRONMENT_URL }}" `
+            --url "${{ secrets.ENVIRONMENTURL }}" `
             --applicationid "${{ secrets.CLIENTID }}" `
             --clientsecret "${{ secrets.CLIENTSECRETVALUE }}" `
             --tenant "${{ secrets.TENANTID }}" `
