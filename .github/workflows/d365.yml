@@ -1,33 +1,55 @@
 name: D365 Solution CI/CD
+
 on:
   push:
     branches:
       - main
       - feature/**
   workflow_dispatch:
+
 env:
   SOLUTION_NAME: test
+
 jobs:
   deploy:
     runs-on: windows-latest
+
     steps:
+      # Checkout repository
       - name: Checkout Code
         uses: actions/checkout@v4
+
+      # Install Power Platform CLI
       - name: Install Power Platform CLI (pac)
         shell: pwsh
         run: |
-          Write-Host "Installing Power Platform CLI via .NET tool..."
+          Write-Host "Installing Power Platform CLI..."
           dotnet tool install --global Microsoft.PowerApps.CLI.Tool
-          $env:Path += ";$env:USERPROFILE\.dotnet\tools"
-          Write-Host "PAC Installed Successfully"
+          echo "$env:USERPROFILE\.dotnet\tools" | Out-File -Append -FilePath $env:GITHUB_PATH
+          pac --version
 
+      # Authenticate using Service Principal
       - name: Authenticate to D365 (Service Principal)
         shell: pwsh
         run: |
-          pac auth create --name GitHubConnection --environment "${{ secrets.ENVIRONMENTURL }}" --applicationId "${{ secrets.CLIENTID }}" --clientSecret "${{ secrets.CLIENTSECRETVALUE }}" --tenant "${{ secrets.TENANTID }}"
-          pac auth select --name GitHubConnection
+          pac auth create `
+            --name GitHubConnection `
+            --url "${{ secrets.ENVIRONMENTURL }}" `
+            --applicationId "${{ secrets.CLIENTID }}" `
+            --clientSecret "${{ secrets.CLIENTSECRETVALUE }}" `
+            --tenant "${{ secrets.TENANTID }}"
 
+          pac auth select --name GitHubConnection
+          pac auth list
+
+      # Import Managed Solution
       - name: Import Solution to Environment
         shell: pwsh
         run: |
-          pac solution import --path "solutions/${{ env.SOLUTION_NAME }}.managed.zip" --overwrite-unmanaged-customizations --publish
+          pac solution import `
+            --path "solutions/${{ env.SOLUTION_NAME }}.managed.zip" `
+            --force-overwrite `
+            --publish-changes `
+            --async `
+            --max-async-wait-time 60 `
+            --skip-lower-version
