@@ -1,1 +1,1 @@
-Setting up D365 Github pipeline
+Setting up D365 Github CICD pipeline
