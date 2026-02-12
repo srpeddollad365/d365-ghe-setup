@@ -1,0 +1,53 @@
+name: D365 Solution CI/CD (test)  
+on: 
+    workflow_dispatch:   
+    push:  
+        branches:
+            - main  
+  
+env:  
+  SOLUTION_NAME: "test"  
+#   PUBLISHER_NAME: "Shashidhar Reddy"  
+#   PUBLISHER_EMAIL: "Shashidhar@TharunTechnologies.onmicrosoft.com"  
+  
+jobs:  
+  build-and-deploy:  
+    runs-on: windows-latest
+
+    steps:  
+    # Checkout the code from the repository
+    - name: Checkout code  
+      uses: actions/checkout@v4  
+
+    # Install Power Platform CLI  
+    - name: Install Power Platform CLI
+      uses: microsoft/powerplatform-actions/actions-install@v1
+    
+    # Authenticate to Azure and D365 using the credentials stored in GitHub Secrets
+    - name: Authenticate to Azure and D365
+      uses: microsoft/powerplatform-actions/actions-authenticate@v1
+      with:        
+            tenant-id ${{ secrets.TENANTID }}
+            clientId ${{ secrets.CLIENTID }}  
+            clientSecret ${{ secrets.CLIENTSECRETVALUE }}
+            environment-url ${{ secrets.PP_DEV_URL }}
+ 
+    # Export the solution using the Power Platform CLI action  
+    - name: Export Solution from D365
+      uses: microsoft/powerplatform-actions/export-solution@v1
+    
+    # 5. Unpack solution into repo
+    - name: Unpack solution
+      uses: microsoft/powerplatform-actions/unpack-solution@v1
+      with:
+        solution-file: 'test.zip'  # Path to the exported solution file
+        output-folder: 'unpacked-solution'  # Folder to unpack the solution into
+
+    # 6. Commit solution changes
+    - name: Commit solution changes
+      run: |
+            git config user.name "github-actions"
+            git config user.email "actions@github.com"
+            git add .
+            git commit -m "Export solution test from D365" || echo "No changes"
+            git push origin main
