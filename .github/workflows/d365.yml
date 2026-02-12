@@ -33,18 +33,7 @@ jobs:
         run: |
           pac auth create `
             --name GitHubConnection `
-            --url "${{ secrets.ENVIRONMENTURL }}" `
-            --applicationid "${{ secrets.CLIENTID }}" `
-            --clientsecret "${{ secrets.CLIENTSECRETVALUE }}" `
-            --tenant "${{ secrets.TENANTID }}" `
-            --prompt never
-
-          pac auth select --name GitHubConnection
-
-      - name: Import Solution to Environment
-        shell: pwsh
-        run: |
-          pac solution import `
-            --path "solutions/${{ env.SOLUTION_NAME }}.managed.zip" `
-            --overwrite-unmanaged-customizations `
-            --publish
+            --environment "${{ secrets.ENVIRONMENTURL }}" `
+            --applicationId "${{ secrets.CLIENTID }}" `
+            --clientSecret "${{ secrets.CLIENTSECRETVALUE }}" `
+            --
