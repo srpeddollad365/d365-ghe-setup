@@ -23,17 +23,16 @@ jobs:
         run: |
           Write-Host "Installing Power Platform CLI via .NET tool..."
           dotnet tool install --global Microsoft.PowerApps.CLI.Tool
-
           $env:Path += ";$env:USERPROFILE\.dotnet\tools"
-
           Write-Host "PAC Installed Successfully"
 
       - name: Authenticate to D365 (Service Principal)
         shell: pwsh
         run: |
-          pac auth create `
-            --name GitHubConnection `
-            --environment "${{ secrets.ENVIRONMENTURL }}" `
-            --applicationId "${{ secrets.CLIENTID }}" `
-            --clientSecret "${{ secrets.CLIENTSECRETVALUE }}" `
-            --
+          pac auth create --name GitHubConnection --environment "${{ secrets.ENVIRONMENTURL }}" --applicationId "${{ secrets.CLIENTID }}" --clientSecret "${{ secrets.CLIENTSECRETVALUE }}" --tenant "${{ secrets.TENANTID }}"
+          pac auth select --name GitHubConnection
+
+      - name: Import Solution to Environment
+        shell: pwsh
+        run: |
+          pac solution import --path "solutions/${{ env.SOLUTION_NAME }}.managed.zip" --overwrite-unmanaged-customizations --publish
