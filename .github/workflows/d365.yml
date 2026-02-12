@@ -8,7 +8,8 @@ on:
   workflow_dispatch:
 
 env:
-  SOLUTION_NAME: test
+  SOLUTION_FOLDER: solutions/test
+  BUILD_FOLDER: build_output
 
 jobs:
   deploy:
@@ -42,12 +43,29 @@ jobs:
           pac auth select --name GitHubConnection
           pac auth list
 
+      # Pack solution as Managed
+      - name: Pack Solution (Managed)
+        shell: pwsh
+        run: |
+          if (Test-Path "${{ env.BUILD_FOLDER }}") {
+            Remove-Item -Recurse -Force "${{ env.BUILD_FOLDER }}"
+          }
+
+          New-Item -ItemType Directory -Path "${{ env.BUILD_FOLDER }}"
+
+          pac solution pack `
+            --folder "${{ env.SOLUTION_FOLDER }}" `
+            --zipfile "${{ env.BUILD_FOLDER }}/managed.zip" `
+            --packagetype Managed
+
+          Write-Host "Solution packed successfully."
+
       # Import Managed Solution
       - name: Import Solution to Environment
         shell: pwsh
         run: |
           pac solution import `
-            --path "solutions/${{ env.SOLUTION_NAME }}.managed.zip" `
+            --path "${{ env.BUILD_FOLDER }}/managed.zip" `
             --force-overwrite `
             --publish-changes `
             --async `
