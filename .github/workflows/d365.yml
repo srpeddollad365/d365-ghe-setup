@@ -26,7 +26,7 @@ jobs:
           Write-Host "Installing Power Platform CLI..."
           dotnet tool install --global Microsoft.PowerApps.CLI.Tool
           echo "$env:USERPROFILE\.dotnet\tools" | Out-File -Append -FilePath $env:GITHUB_PATH
-          pac --version
+          pac help
 
       # Authenticate using Service Principal
       - name: Authenticate to D365 (Service Principal)
