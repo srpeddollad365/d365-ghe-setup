@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - main
+      - feature/d365-cicd-setup
   workflow_dispatch: 
 env:
   SOLUTION_NAME: test
