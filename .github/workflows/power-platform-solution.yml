@@ -46,13 +46,12 @@ jobs:
           pac auth list
 
       # Debug: Check solution files
-      - name: Debug - List Solution Files
+      - name: Debug - Verify Folder Structure
         shell: pwsh
         run: |
-          Write-Host "Checking solution folder structure..."
-          Get-ChildItem -Recurse "${{ env.SOLUTION_FOLDER }}" -Force | ForEach-Object {
-            Write-Host $_.FullName
-          }
+          Write-Host "===== VERIFYING FOLDER STRUCTURE ====="
+          Get-ChildItem -Recurse solutions/test
+          Write-Host "======================================="
 
       # Pack solution as Managed
       - name: Pack Solution (Managed)
