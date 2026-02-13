@@ -53,12 +53,23 @@ jobs:
 
           New-Item -ItemType Directory -Path "${{ env.BUILD_FOLDER }}"
 
-          pac solution pack `
-            --folder "${{ env.SOLUTION_FOLDER }}" `
-            --zipfile "${{ env.BUILD_FOLDER }}/managed.zip" `
-            --packagetype Managed
+          try {
+            pac solution pack `
+              --folder "${{ env.SOLUTION_FOLDER }}" `
+              --zipfile "${{ env.BUILD_FOLDER }}/managed.zip" `
+              --packagetype Managed 2>&1
+          } catch {
+            Write-Host "Pack command completed (some warnings may occur)"
+          }
 
-          Write-Host "Solution packed successfully."
+          # Verify the zip file was created
+          if (Test-Path "${{ env.BUILD_FOLDER }}/managed.zip") {
+            Write-Host "✓ Solution packed successfully."
+            Get-Item "${{ env.BUILD_FOLDER }}/managed.zip"
+          } else {
+            Write-Host "✗ Failed to create solution zip file"
+            exit 1
+          }
 
       # Import Managed Solution
       - name: Import Solution to Environment
