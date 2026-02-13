@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <ImportExportXml version="9.2.1.178" SolutionBundleVersion="1.0" languageLCID="1033" generatedBy="CrmLive" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <SolutionManifest>
     <UniqueName>test</UniqueName>
@@ -26,3 +26,4 @@
     <MissingDependencies />
   </SolutionManifest>
 </ImportExportXml>
+
