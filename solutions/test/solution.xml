@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ImportExportXml version="9.2.1.178" SolutionBundleVersion="1.0" languageLCID="1033" generatedBy="CrmLive" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <SolutionManifest>
+    <UniqueName>test</UniqueName>
+    <LocalizedNames>
+      <LocalizedName description="Test Solution" languageid="1033" />
+    </LocalizedNames>
+    <Descriptions>
+      <Description description="Test solution for GitHub Actions" languageid="1033" />
+    </Descriptions>
+    <Version>1.0.0.0</Version>
+    <Managed>0</Managed>
+    <Publisher>
+      <UniqueName>DefaultPublisher</UniqueName>
+      <LocalizedNames>
+        <LocalizedName description="Default Publisher" languageid="1033" />
+      </LocalizedNames>
+      <Descriptions />
+      <EMailAddress>info@example.com</EMailAddress>
+      <SupportingWebsiteUrl>https://example.com</SupportingWebsiteUrl>
+      <CustomizationPrefix>new</CustomizationPrefix>
+      <CustomizationOptionValuePrefix>10000</CustomizationOptionValuePrefix>
+    </Publisher>
+    <RootComponents>
+    </RootComponents>
+    <MissingDependencies />
+  </SolutionManifest>
+</ImportExportXml>

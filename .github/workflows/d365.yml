@@ -1,49 +1,93 @@
 name: D365 Solution CI/CD
+
 on:
   push:
     branches:
       - main
-  workflow_dispatch: 
+      - feature/**
+  workflow_dispatch:
+
 env:
-  SOLUTION_NAME: test
- 
+  SOLUTION_FOLDER: solutions/test
+  BUILD_FOLDER: build_output
+
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: windows-latest
- 
+
     steps:
-      - name: Checkout code
+      # Checkout repository
+      - name: Checkout Code
         uses: actions/checkout@v4
- 
-      - name: Install Power Platform CLI
-        uses: microsoft/powerplatform-actions/install@v1
- 
-      - name: Authenticate to Power Platform
-        uses: microsoft/powerplatform-actions/authenticate@v1
-        with:
-          tenant-id: ${{ secrets.TENANTID }}
-          client-id: ${{ secrets.CLIENTID }}
-          client-secret: ${{ secrets.CLIENTSECRETVALUE }}
-          environment-url: ${{ secrets.PP_DEV_URL }}
- 
-      - name: Export solution
-        uses: microsoft/powerplatform-actions/export-solution@v1
-        with:
-          solution-name: ${{ env.SOLUTION_NAME }}
-          solution-output-file: solutions/${{ env.SOLUTION_NAME }}.zip
-          managed: false
- 
-      - name: Unpack solution
-        uses: microsoft/powerplatform-actions/unpack-solution@v1
-        with:
-          solution-file: solutions/${{ env.SOLUTION_NAME }}.zip
-          target-folder: solutions/${{ env.SOLUTION_NAME }}
-          solution-type: Unmanaged
- 
-      - name: Commit solution to repo
+
+      # Install Power Platform CLI
+      - name: Install Power Platform CLI (pac)
+        shell: pwsh
         run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add solutions
-          git commit -m "Export solution ${{ env.SOLUTION_NAME }}" || echo "No changes"
-          git push
+          Write-Host "Installing Power Platform CLI..."
+          dotnet tool install --global Microsoft.PowerApps.CLI.Tool
+          echo "$env:USERPROFILE\.dotnet\tools" | Out-File -Append -FilePath $env:GITHUB_PATH
+          pac help
+
+      # Authenticate using Service Principal
+      - name: Authenticate to D365 (Service Principal)
+        shell: pwsh
+        run: |
+          pac auth create `
+            --name GitHubConnection `
+            --url "${{ secrets.ENVIRONMENTURL }}" `
+            --applicationId "${{ secrets.CLIENTID }}" `
+            --clientSecret "${{ secrets.CLIENTSECRETVALUE }}" `
+            --tenant "${{ secrets.TENANTID }}"
+
+          pac auth select --name GitHubConnection
+          pac auth list
+
+      # Debug: Check solution files
+      - name: Debug - List Solution Files
+        shell: pwsh
+        run: |
+          Write-Host "Checking solution folder structure..."
+          Get-ChildItem -Recurse "${{ env.SOLUTION_FOLDER }}" -Force | ForEach-Object {
+            Write-Host $_.FullName
+          }
+
+      # Pack solution as Managed
+      - name: Pack Solution (Managed)
+        shell: pwsh
+        run: |
+          if (Test-Path "${{ env.BUILD_FOLDER }}") {
+            Remove-Item -Recurse -Force "${{ env.BUILD_FOLDER }}"
+          }
+
+          New-Item -ItemType Directory -Path "${{ env.BUILD_FOLDER }}"
+
+          try {
+            pac solution pack `
+              --folder "${{ env.SOLUTION_FOLDER }}" `
+              --zipfile "${{ env.BUILD_FOLDER }}/managed.zip" `
+              --packagetype Managed 2>&1
+          } catch {
+            Write-Host "Pack command completed (some warnings may occur)"
+          }
+
+          # Verify the zip file was created
+          if (Test-Path "${{ env.BUILD_FOLDER }}/managed.zip") {
+            Write-Host "✓ Solution packed successfully."
+            Get-Item "${{ env.BUILD_FOLDER }}/managed.zip"
+          } else {
+            Write-Host "✗ Failed to create solution zip file"
+            exit 1
+          }
+
+      # Import Managed Solution
+      - name: Import Solution to Environment
+        shell: pwsh
+        run: |
+          pac solution import `
+            --path "${{ env.BUILD_FOLDER }}/managed.zip" `
+            --force-overwrite `
+            --publish-changes `
+            --async `
+            --max-async-wait-time 60 `
+            --skip-lower-version
