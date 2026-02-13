@@ -43,6 +43,15 @@ jobs:
           pac auth select --name GitHubConnection
           pac auth list
 
+      # Debug: Check solution files
+      - name: Debug - List Solution Files
+        shell: pwsh
+        run: |
+          Write-Host "Checking solution folder structure..."
+          Get-ChildItem -Recurse "${{ env.SOLUTION_FOLDER }}" -Force | ForEach-Object {
+            Write-Host $_.FullName
+          }
+
       # Pack solution as Managed
       - name: Pack Solution (Managed)
         shell: pwsh
