@@ -53,32 +53,6 @@ jobs:
           Get-ChildItem -Recurse "${{ env.SOLUTION_FOLDER }}" -Force | ForEach-Object {
             Write-Host $_.FullName
           }
-          Write-Host "`nChecking if Customizations.xml exists:"
-          if (Test-Path "${{ env.SOLUTION_FOLDER }}/Other/Customizations.xml") {
-            Write-Host "✓ File exists"
-            Get-Content "${{ env.SOLUTION_FOLDER }}/Other/Customizations.xml" | Select-Object -First 3
-          } else {
-            Write-Host "✗ File missing - recreating..."
-            @'
-<?xml version="1.0" encoding="utf-8"?>
-<ImportExportXml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-  <Entities />
-  <Roles />
-  <Workflows />
-  <FieldSecurityProfiles />
-  <Templates />
-  <EntityMaps />
-  <EntityRelationships />
-  <OrganizationSettings />
-  <optionsets />
-  <AppModules />
-  <GlobalOptionSets />
-  <LocalizedLabels />
-  <Sitemap />
-</ImportExportXml>
-'@ | Out-File -Encoding UTF8 "${{ env.SOLUTION_FOLDER }}/Other/Customizations.xml" -NoNewline
-            Write-Host "✓ File recreated"
-          }
 
       # Pack solution as Managed
       - name: Pack Solution (Managed)
